@@ -4,10 +4,6 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Lock, Mail, Stethoscope, UserCog } from "lucide-react";
-import { DM_Sans, Syne } from "next/font/google";
-
-const dmSans = DM_Sans({ subsets: ["latin"] });
-const syne = Syne({ subsets: ["latin"], weight: ["600", "700"] });
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "") || "http://localhost:4000";
@@ -27,7 +23,7 @@ export default function LoginPage() {
     if (typeof window === "undefined") return;
     const hasAuthCookie = document.cookie.includes("medai_auth=1");
     if (hasAuthCookie) {
-      router.replace("/dashboard");
+      router.replace("/");
     }
   }, [router]);
 
@@ -51,7 +47,7 @@ export default function LoginPage() {
       localStorage.setItem("medai_user", JSON.stringify(data.user));
       localStorage.setItem("medai_role", role);
       document.cookie = "medai_auth=1; path=/; max-age=2592000; samesite=lax";
-      router.push("/dashboard");
+      router.push("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
       setShake(true);
@@ -62,7 +58,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className={`${dmSans.className} min-h-screen overflow-hidden`} style={{ background: "#040d1a" }}>
+    <div className="min-h-screen overflow-hidden" style={{ background: "#040d1a" }}>
       <div className="pointer-events-none absolute inset-0 opacity-40">
         <div className="absolute inset-0 [background:radial-gradient(circle_at_30%_30%,rgba(0,180,216,0.18),transparent_40%),radial-gradient(circle_at_80%_10%,rgba(0,119,182,0.18),transparent_30%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(rgba(226,232,240,0.07)_1px,transparent_1px)] [background-size:22px_22px]" />
@@ -76,13 +72,13 @@ export default function LoginPage() {
                 <Stethoscope className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className={`${syne.className} text-xl tracking-wide`} style={{ color: "#e2e8f0" }}>
+                <p className="font-display text-xl tracking-wide" style={{ color: "#e2e8f0" }}>
                   MedAI Pro
                 </p>
                 <p className="text-xs" style={{ color: "#4a6fa5" }}>Doctor Panel</p>
               </div>
             </div>
-            <h1 className={`${syne.className} max-w-xl text-5xl leading-tight`} style={{ color: "#e2e8f0" }}>
+            <h1 className="font-display max-w-xl text-5xl leading-tight" style={{ color: "#e2e8f0" }}>
               Intelligent Clinical AI for Modern Medicine
             </h1>
             <p className="mt-5 max-w-lg text-lg" style={{ color: "#4a6fa5" }}>
@@ -117,7 +113,7 @@ export default function LoginPage() {
             className={`w-full max-w-md rounded-3xl border p-7 shadow-2xl backdrop-blur-xl transition-all ${shake ? "translate-x-1" : ""}`}
             style={{ background: "rgba(10,22,40,0.85)", borderColor: "rgba(0,180,216,0.2)", boxShadow: "0 0 40px rgba(0,180,216,0.12)" }}
           >
-            <h2 className={`${syne.className} text-3xl`} style={{ color: "#e2e8f0" }}>Welcome Back</h2>
+            <h2 className="font-display text-3xl" style={{ color: "#e2e8f0" }}>Welcome Back</h2>
             <p className="mt-2 text-sm" style={{ color: "#4a6fa5" }}>
               Sign in as {roleLabel} to continue.
             </p>

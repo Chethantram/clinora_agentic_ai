@@ -4,10 +4,6 @@ import { FormEvent, ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BriefcaseMedical, Lock, Mail, Phone, Stethoscope, User, UserCog } from "lucide-react";
-import { DM_Sans, Syne } from "next/font/google";
-
-const dmSans = DM_Sans({ subsets: ["latin"] });
-const syne = Syne({ subsets: ["latin"], weight: ["600", "700"] });
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "") || "http://localhost:4000";
@@ -81,7 +77,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className={`${dmSans.className} min-h-screen overflow-hidden`} style={{ background: "#040d1a" }}>
+    <div className="min-h-screen overflow-hidden" style={{ background: "#040d1a" }}>
       <div className="pointer-events-none absolute inset-0 opacity-45">
         <div className="absolute inset-0 [background:radial-gradient(circle_at_35%_18%,rgba(0,180,216,0.2),transparent_38%),radial-gradient(circle_at_78%_8%,rgba(0,119,182,0.18),transparent_30%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(rgba(226,232,240,0.08)_1px,transparent_1px)] [background-size:20px_20px]" />
@@ -94,7 +90,7 @@ export default function RegisterPage() {
         >
           <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className={`${syne.className} text-3xl`} style={{ color: "#e2e8f0" }}>
+              <p className="font-display text-3xl" style={{ color: "#e2e8f0" }}>
                 Create Your Account
               </p>
               <p className="mt-1 text-sm" style={{ color: "#4a6fa5" }}>
@@ -106,7 +102,7 @@ export default function RegisterPage() {
                 <Stethoscope className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className={`${syne.className} text-base`} style={{ color: "#e2e8f0" }}>MedAI Pro</p>
+                <p className="font-display text-base" style={{ color: "#e2e8f0" }}>MedAI Pro</p>
                 <p className="text-xs" style={{ color: "#4a6fa5" }}>Register</p>
               </div>
             </div>

@@ -9,6 +9,45 @@ Transform healthcare delivery through AI-driven patient intelligence, enabling h
 
 ---
 
+## 🎉 Recent Updates - MongoDB Atlas Integration (April 2024)
+
+Clinora has been **upgraded to use MongoDB Atlas** for dynamic, scalable data management:
+
+### What's New
+✅ **MongoDB Atlas Database** - Cloud-hosted scalable database  
+✅ **Mongoose ORM** - Type-safe database operations  
+✅ **RESTful API v2** - MongoDB-backed endpoints  
+✅ **React Hooks** - Frontend integration library  
+✅ **Data Seeding** - Automated migration from JSON  
+✅ **CRUD Operations** - Full create/read/update capabilities  
+✅ **Type Safety** - TypeScript throughout  
+
+### Quick Start
+```bash
+# 1. Setup backend
+cd backend1
+npm install
+cp .env.example .env
+# Add MongoDB URI to .env
+node scripts/seed.js
+npm run dev
+
+# 2. Setup frontend (new terminal)
+cd v0-hackathon-development-order
+npm install
+npm run dev
+
+# Open http://localhost:3000
+```
+
+### Documentation
+📖 **[SETUP_MONGODB.md](./SETUP_MONGODB.md)** - Quick start guide  
+📖 **[DEVELOPMENT_GUIDE.md](./DEVELOPMENT_GUIDE.md)** - Complete development workflow  
+📖 **[QUICK_REFERENCE.md](./QUICK_REFERENCE.md)** - Quick reference card  
+📖 **[IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md)** - Full technical details  
+
+---
+
 ## ✨ Key Features
 
 ### 🤖 AI-Powered Agents System

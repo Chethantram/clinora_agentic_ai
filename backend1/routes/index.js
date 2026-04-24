@@ -909,6 +909,140 @@ router.post('/patient/:id/search', (req, res) => {
   return res.json(result);
 });
 
+// ── Patient CRUD (Create / Update / Delete) ─────────────────────────────
+
+router.post('/patients', async (req, res) => {
+  try {
+    if (!MongoClient || !process.env.MONGO_URI) {
+      return res.status(500).json({ error: 'MongoDB is not configured' });
+    }
+
+    const { name, age, gender, diagnosis, allergies, status, email, phone } = req.body;
+    if (!name) return res.status(400).json({ error: 'name is required' });
+
+    const client = new MongoClient(process.env.MONGO_URI);
+    try {
+      await client.connect();
+      const dbName = String(process.env.MONGO_DB_NAME || '').trim();
+      const db = dbName ? client.db(dbName) : client.db();
+
+      // Auto-generate a unique patient_id
+      const count = await db.collection('patients').countDocuments();
+      const patient_id = `P${String(count + 1).padStart(3, '0')}`;
+
+      const doc = {
+        patient_id,
+        name: name.trim(),
+        age: age ? Number(age) : null,
+        gender: gender || '',
+        diagnosis: Array.isArray(diagnosis) ? diagnosis : [],
+        allergies: Array.isArray(allergies) ? allergies : [],
+        status: status || 'stable',
+        email: email || null,
+        phone: phone || null,
+        lastVisit: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      await db.collection('patients').insertOne(doc);
+      blockchain.addBlock('CREATE_PATIENT', req.headers['x-actor-id'] || 'SYSTEM', patient_id, `Patient created: ${name}`);
+      return res.status(201).json(doc);
+    } finally {
+      await client.close();
+    }
+  } catch (e) {
+    return res.status(500).json({ error: `Failed to create patient: ${e.message}` });
+  }
+});
+
+router.put('/patient/:id', async (req, res) => {
+  try {
+    if (!MongoClient || !process.env.MONGO_URI) {
+      return res.status(500).json({ error: 'MongoDB is not configured' });
+    }
+
+    const client = new MongoClient(process.env.MONGO_URI);
+    try {
+      await client.connect();
+      const dbName = String(process.env.MONGO_DB_NAME || '').trim();
+      const db = dbName ? client.db(dbName) : client.db();
+
+      const normalizedId = String(req.params.id).trim().toUpperCase();
+      const updates = {};
+      const { name, age, gender, diagnosis, allergies, status, email, phone } = req.body;
+      if (name !== undefined) updates.name = name.trim();
+      if (age !== undefined) updates.age = Number(age);
+      if (gender !== undefined) updates.gender = gender;
+      if (diagnosis !== undefined) updates.diagnosis = Array.isArray(diagnosis) ? diagnosis : [];
+      if (allergies !== undefined) updates.allergies = Array.isArray(allergies) ? allergies : [];
+      if (status !== undefined) updates.status = status;
+      if (email !== undefined) updates.email = email;
+      if (phone !== undefined) updates.phone = phone;
+      updates.updatedAt = new Date();
+
+      const result = await db.collection('patients').findOneAndUpdate(
+        { patient_id: { $regex: new RegExp(`^${normalizedId}$`, 'i') } },
+        { $set: updates },
+        { returnDocument: 'after' }
+      );
+
+      const updated = result?.value || result;
+      if (!updated || !updated.patient_id) {
+        return res.status(404).json({ error: 'Patient not found' });
+      }
+
+      blockchain.addBlock('UPDATE_PATIENT', req.headers['x-actor-id'] || 'SYSTEM', normalizedId, `Patient updated`);
+      return res.json(updated);
+    } finally {
+      await client.close();
+    }
+  } catch (e) {
+    return res.status(500).json({ error: `Failed to update patient: ${e.message}` });
+  }
+});
+
+router.delete('/patient/:id', async (req, res) => {
+  try {
+    if (!MongoClient || !process.env.MONGO_URI) {
+      return res.status(500).json({ error: 'MongoDB is not configured' });
+    }
+
+    const client = new MongoClient(process.env.MONGO_URI);
+    try {
+      await client.connect();
+      const dbName = String(process.env.MONGO_DB_NAME || '').trim();
+      const db = dbName ? client.db(dbName) : client.db();
+
+      const normalizedId = String(req.params.id).trim().toUpperCase();
+
+      // Delete the patient and all associated records
+      const result = await db.collection('patients').deleteOne({
+        patient_id: { $regex: new RegExp(`^${normalizedId}$`, 'i') },
+      });
+
+      if (result.deletedCount === 0) {
+        return res.status(404).json({ error: 'Patient not found' });
+      }
+
+      // Also clean up associated records
+      await Promise.allSettled([
+        db.collection('visits').deleteMany({ patient_id: { $regex: new RegExp(`^${normalizedId}$`, 'i') } }),
+        db.collection('medications').deleteMany({ patient_id: { $regex: new RegExp(`^${normalizedId}$`, 'i') } }),
+        db.collection('labs').deleteMany({ patient_id: { $regex: new RegExp(`^${normalizedId}$`, 'i') } }),
+        db.collection('alerts').deleteMany({ patient_id: { $regex: new RegExp(`^${normalizedId}$`, 'i') } }),
+      ]);
+
+      blockchain.addBlock('DELETE_PATIENT', req.headers['x-actor-id'] || 'SYSTEM', normalizedId, `Patient deleted`);
+      return res.json({ success: true, patient_id: normalizedId });
+    } finally {
+      await client.close();
+    }
+  } catch (e) {
+    return res.status(500).json({ error: `Failed to delete patient: ${e.message}` });
+  }
+});
+
 router.post('/drugs/check', (req, res) => {
   const { medications } = req.body;
   if (!Array.isArray(medications) || medications.length === 0) {
@@ -1148,7 +1282,13 @@ router.post('/agent/ocr', uploadAny.any(), async (req, res) => {
 
   try {
     const { processUploadedDocument } = require('../agents/ocrAgent');
-    const result = await processUploadedDocument(uploaded.path, req.body.apiKey, req.body.model);
+    
+    // Add extension to uploaded file so ocrAgent can identify file type
+    const ext = path.extname(uploaded.originalname);
+    const newPath = uploaded.path + ext;
+    fs.renameSync(uploaded.path, newPath);
+
+    const result = await processUploadedDocument(newPath, req.body.apiKey, req.body.model);
     blockchain.addBlock('OCR_PROCESSING', 'SYSTEM', req.body.patientId || 'UNKNOWN', `OCR processing complete - ${result.success ? 'success' : 'failed'}`);
 
     if (result.success && req.body.patientId && req.body.autoIngest === 'true') {
@@ -1157,7 +1297,7 @@ router.post('/agent/ocr', uploadAny.any(), async (req, res) => {
       blockchain.addBlock('INGESTION_PROCESSING', 'SYSTEM', req.body.patientId, `Ingestion complete - ${ingestion.success ? 'success' : 'failed'}`);
     }
 
-    fs.unlink(uploaded.path, () => {});
+    fs.unlink(newPath, () => {});
     return res.json(result);
   } catch (e) {
     return res.status(500).json({ error: e.message });

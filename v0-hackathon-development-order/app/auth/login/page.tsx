@@ -18,7 +18,7 @@ export default function DoctorLoginPage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (document.cookie.includes("medai_auth=1")) router.replace("/dashboard");
+    if (document.cookie.includes("medai_auth=1")) router.replace("/");
   }, [router]);
 
   const onSubmit = async (e: FormEvent) => {
@@ -36,7 +36,7 @@ export default function DoctorLoginPage() {
       localStorage.setItem("medai_user", JSON.stringify(data.user));
       localStorage.setItem("medai_role", "doctor");
       document.cookie = "medai_auth=1; path=/; max-age=2592000; samesite=lax";
-      router.push("/dashboard");
+      router.push("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {

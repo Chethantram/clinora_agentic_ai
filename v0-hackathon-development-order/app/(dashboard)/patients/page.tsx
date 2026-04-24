@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { fetchApi } from "@/lib/backend-api";
+import { PatientFormDialog, type PatientFormData } from "@/components/dashboard/patient-form-dialog";
 import {
   Search,
   UserPlus,
@@ -13,8 +14,28 @@ import {
   ChevronRight,
   ShieldAlert,
   SlidersHorizontal,
+  Pencil,
+  Trash2,
+  MoreHorizontal,
 } from "lucide-react";
 import Link from "next/link";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 const statusConfig = {
   stable:     { label: "Stable",     dot: "#10b981", bg: "#f0fdf4", color: "#15803d", border: "#bbf7d0" },
@@ -40,6 +61,14 @@ export default function PatientsPage() {
   >([]);
   const [search, setSearch]           = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  // Dialog state
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editPatient, setEditPatient] = useState<PatientFormData | null>(null);
+
+  // Delete dialog state
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -109,6 +138,75 @@ export default function PatientsPage() {
 
   const getAlerts = (pid: string) => alertsData.filter((a) => a.patient_id === pid);
 
+  const handleAddPatient = () => {
+    setEditPatient(null);
+    setDialogOpen(true);
+  };
+
+  const handleEditPatient = (patient: typeof patientsData[0]) => {
+    setEditPatient({
+      patient_id: patient.patient_id,
+      name: patient.name,
+      age: patient.age ?? "",
+      gender: patient.gender,
+      diagnosis: patient.diagnosis.join(", "),
+      allergies: patient.allergies.join(", "),
+      status: patient.status,
+    });
+    setDialogOpen(true);
+  };
+
+  const handleDeletePatient = (patient: typeof patientsData[0]) => {
+    setDeleteTarget({ id: patient.patient_id, name: patient.name });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await fetchApi(`/api/patient/${deleteTarget.id}`, { method: "DELETE" });
+      setPatientsData((prev) => prev.filter((p) => p.patient_id !== deleteTarget.id));
+      setDeleteTarget(null);
+    } catch {
+      // handle error silently
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleFormSuccess = (saved: unknown) => {
+    const p = saved as {
+      patient_id: string;
+      name: string;
+      age: number;
+      gender: string;
+      diagnosis: string[];
+      allergies: string[];
+      status: string;
+      lastVisit: string;
+    };
+    const normalized = {
+      patient_id: p.patient_id,
+      name: p.name,
+      age: p.age ?? null,
+      gender: p.gender,
+      diagnosis: p.diagnosis || [],
+      allergies: p.allergies || [],
+      status: p.status || "stable",
+      lastVisit: p.lastVisit || null,
+    };
+
+    setPatientsData((prev) => {
+      const idx = prev.findIndex((x) => x.patient_id === p.patient_id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = normalized;
+        return next;
+      }
+      return [normalized, ...prev];
+    });
+  };
+
   return (
     <>
       <style>{`
@@ -124,7 +222,6 @@ export default function PatientsPage() {
           border-radius: 10px;
         }
 
-        /* Filter chip */
         .pl-chip {
           display: inline-flex;
           align-items: center;
@@ -147,7 +244,6 @@ export default function PatientsPage() {
         .pl-chip.monitoring.active { background: #fffbeb; color: #b45309; border-color: #fde68a; }
         .pl-chip.stable.active    { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
 
-        /* Patient card */
         .pl-patient-card {
           background: white;
           border: 1px solid #e2e8f0;
@@ -158,6 +254,7 @@ export default function PatientsPage() {
           color: inherit;
           display: block;
           transition: all 0.16s ease;
+          position: relative;
         }
         .pl-patient-card:hover {
           box-shadow: 0 4px 16px rgba(0,0,0,0.08);
@@ -165,7 +262,6 @@ export default function PatientsPage() {
           transform: translateY(-1px);
         }
 
-        /* Search input */
         .pl-search {
           border: 1px solid #e2e8f0;
           border-radius: 7px;
@@ -250,6 +346,14 @@ export default function PatientsPage() {
           justify-content: center;
           text-align: center;
         }
+
+        .pl-action-dot {
+          opacity: 0;
+          transition: opacity 0.14s;
+        }
+        .pl-patient-card:hover .pl-action-dot {
+          opacity: 1;
+        }
       `}</style>
 
       <div className="pl flex flex-col gap-6" style={{ background: "#f8fafc", padding: "2px 0 32px" }}>
@@ -267,7 +371,7 @@ export default function PatientsPage() {
               {patientsData.length} registered patients &nbsp;·&nbsp; {counts.critical} critical
             </p>
           </div>
-          <button className="pl-add-btn">
+          <button className="pl-add-btn" onClick={handleAddPatient}>
             <UserPlus style={{ width: 15, height: 15 }} />
             Add Patient
           </button>
@@ -367,11 +471,43 @@ export default function PatientsPage() {
               const highAlerts  = patAlerts.filter((a) => a.severity === "high");
 
               return (
-                <Link key={patient.patient_id} href={`/patients/${patient.patient_id}`} className="pl-patient-card"
-                  style={{ ...(patient.status === "critical" ? { borderLeft: "2.5px solid #ef4444" } : {}) }}>
+                <div
+                  key={patient.patient_id}
+                  className="pl-patient-card"
+                  style={{ ...(patient.status === "critical" ? { borderLeft: "2.5px solid #ef4444" } : {}) }}
+                >
+                  {/* Action menu */}
+                  <div className="pl-action-dot" style={{ position: "absolute", top: 12, right: 12 }}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg">
+                          <MoreHorizontal style={{ width: 15, height: 15 }} />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="rounded-lg">
+                        <DropdownMenuItem
+                          className="cursor-pointer rounded-lg"
+                          onClick={() => handleEditPatient(patient)}
+                        >
+                          <Pencil style={{ width: 13, height: 13, marginRight: 6 }} />
+                          Edit Patient
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="cursor-pointer rounded-lg text-destructive focus:text-destructive"
+                          onClick={() => handleDeletePatient(patient)}
+                        >
+                          <Trash2 style={{ width: 13, height: 13, marginRight: 6 }} />
+                          Delete Patient
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
 
                   {/* Top row */}
-                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+                  <Link
+                    href={`/patients/${patient.patient_id}`}
+                    style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12, textDecoration: "none", color: "inherit" }}
+                  >
                     <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
                       <div style={{ position: "relative", flexShrink: 0 }}>
                         <Avatar style={{ width: 44, height: 44, border: "2px solid white", boxShadow: "0 1px 6px rgba(0,0,0,0.09)" }}>
@@ -393,7 +529,7 @@ export default function PatientsPage() {
                     <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 4, background: sSafe.bg, color: sSafe.color, border: `1px solid ${sSafe.border}`, flexShrink: 0 }}>
                       {sSafe.label}
                     </span>
-                  </div>
+                  </Link>
 
                   {/* Diagnosis tags */}
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 10 }}>
@@ -424,7 +560,7 @@ export default function PatientsPage() {
                     </div>
                     <ChevronRight style={{ width: 15, height: 15, color: "#cbd5e1" }} />
                   </div>
-                </Link>
+                </div>
               );
             })}
           </div>
@@ -444,6 +580,38 @@ export default function PatientsPage() {
           </div>
         )}
       </div>
+
+      {/* Add/Edit Patient Dialog */}
+      <PatientFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSuccess={handleFormSuccess}
+        editPatient={editPatient}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
+        <AlertDialogContent className="rounded-xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Patient</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete{" "}
+              <strong>{deleteTarget?.name}</strong>? This action cannot be undone and will
+              remove all associated records.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-lg">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-lg"
+              onClick={confirmDelete}
+              disabled={deleting}
+            >
+              {deleting ? "Deleting..." : "Delete Patient"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

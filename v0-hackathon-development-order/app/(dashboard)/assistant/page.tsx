@@ -13,8 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { patients } from "@/lib/mock-data";
-import { agentQuery } from "@/lib/patient-portal";
+import { fetchApi } from "@/lib/backend-api";
+import { agentQuery, uploadDocument } from "@/lib/patient-portal";
 import {
   Send,
   Bot,
@@ -80,11 +80,23 @@ const createChatSession = (): ChatSession => {
 };
 
 function renderInlineText(text: string) {
-  const segments = text.split(/(\*\*[^*]+\*\*)/g);
+  const segments = text.split(/(\*\*[^*]+\*\*|\[WARN\][\s\S]*?\[\/WARN\])/g);
   return segments.map((segment, index) => {
-    const isBold = segment.startsWith("**") && segment.endsWith("**") && segment.length > 4;
-    if (!isBold) return <span key={`${segment}-${index}`}>{segment}</span>;
-    return <strong key={`${segment}-${index}`}>{segment.slice(2, -2)}</strong>;
+    if (segment.startsWith("**") && segment.endsWith("**") && segment.length > 4) {
+      return <strong key={`${index}`}>{segment.slice(2, -2)}</strong>;
+    }
+    if (segment.startsWith("[WARN]") && segment.endsWith("[/WARN]")) {
+      return (
+        <span 
+          key={`${index}`} 
+          className="bg-yellow-200/60 text-yellow-900 border border-yellow-300 rounded px-1.5 py-0.5 text-xs font-medium cursor-help"
+          title="Low confidence — please verify."
+        >
+          {segment.slice(6, -7)}
+        </span>
+      );
+    }
+    return <span key={`${index}`}>{segment}</span>;
   });
 }
 
@@ -151,8 +163,26 @@ export default function AssistantPage() {
   const [activeChatId, setActiveChatId] = useState<string>("");
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [patients, setPatients] = useState<Array<{ patient_id: string; name: string; diagnosis: string[]; status: string }>>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let active = true;
+    async function loadPatients() {
+      try {
+        const data = await fetchApi<Array<{ patient_id: string; name: string; diagnosis: string[]; status: string }>>("/api/patients");
+        if (active && Array.isArray(data)) {
+          setPatients(data);
+        }
+      } catch {
+        // keep fallback mock patients on error
+      }
+    }
+    loadPatients();
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     const raw = localStorage.getItem(CHAT_STORAGE_KEY);
@@ -292,6 +322,51 @@ export default function AssistantPage() {
       }));
     } finally {
       setIsTyping(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeChat) return;
+
+    if (!selectedPatient) {
+      alert("Please select a patient before uploading a document.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    const userMessage: Message = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: `[Uploaded Document: ${file.name}] Please extract data and ingest it into the patient's record.`,
+      timestamp: new Date().toISOString(),
+    };
+
+    updateActiveChat((chat) => ({
+      ...chat,
+      messages: [...chat.messages, userMessage],
+    }));
+
+    setIsTyping(true);
+
+    const response = await uploadDocument(file, selectedPatient);
+    
+    const assistantMessage: Message = {
+      id: crypto.randomUUID(),
+      role: "assistant",
+      content: response,
+      timestamp: new Date().toISOString(),
+    };
+
+    updateActiveChat((chat) => ({
+      ...chat,
+      messages: [...chat.messages, assistantMessage],
+    }));
+
+    setIsTyping(false);
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -592,7 +667,21 @@ export default function AssistantPage() {
               }}
               className="flex items-center gap-3"
             >
-              <Button type="button" variant="ghost" size="icon" className="shrink-0 rounded-xl text-muted-foreground hover:text-foreground">
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept=".pdf,.png,.jpg,.jpeg"
+                onChange={handleFileUpload}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="shrink-0 rounded-xl text-muted-foreground hover:text-foreground"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isTyping}
+              >
                 <Paperclip className="h-5 w-5" />
               </Button>
               <Input

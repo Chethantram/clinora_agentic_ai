@@ -9,18 +9,24 @@ const fs = require('fs');
 const { createApp } = require('./app');
 const blockchain = require('./blockchain/logger');
 const { initIndex, indexPatient } = require('./rag/vectorStore');
+const { connectDB } = require('./db');
 
 const ioCors = {
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   methods: ['GET', 'POST'],
 };
 
-// Ensure uploads dir exists
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
-
-// Init blockchain + RAG
+// Init blockchain + RAG + MongoDB
 async function init() {
+  // Connect to MongoDB Atlas
+  try {
+    await connectDB();
+  } catch (e) {
+    console.error('Failed to connect to MongoDB:', e.message);
+    console.error('Please ensure MONGO_URI is set in your .env file');
+    process.exit(1);
+  }
+
   const app = createApp();
   const server = http.createServer(app);
   const io = new Server(server, { cors: ioCors });

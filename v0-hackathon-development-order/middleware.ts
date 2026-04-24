@@ -23,7 +23,7 @@ export function middleware(req: NextRequest) {
 
   if (isLoggedIn && isPublicPath(pathname)) {
     const url = req.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = "/";
     return NextResponse.redirect(url);
   }
 

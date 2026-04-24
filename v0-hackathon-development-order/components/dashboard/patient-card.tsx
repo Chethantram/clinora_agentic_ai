@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { Patient } from "@/lib/mock-data";
+import type { Patient } from "@/lib/clinora-api";
 import { AlertTriangle, Activity, CheckCircle } from "lucide-react";
 import Link from "next/link";
 
@@ -31,7 +31,7 @@ const statusConfig = {
 };
 
 export function PatientCard({ patient }: PatientCardProps) {
-  const status = statusConfig[patient.status];
+  const status = statusConfig[patient.status || "stable"] || statusConfig.stable;
   const StatusIcon = status.icon;
 
   return (
@@ -43,15 +43,14 @@ export function PatientCard({ patient }: PatientCardProps) {
               <Avatar className="h-12 w-12">
                 <AvatarFallback className="bg-secondary text-secondary-foreground">
                   {patient.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
+                    ? patient.name.split(" ").map((n) => n[0]).join("").substring(0, 2)
+                    : "??"}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h3 className="font-semibold text-foreground">{patient.name}</h3>
+                <h3 className="font-semibold text-foreground">{patient.name || "Unknown Patient"}</h3>
                 <p className="text-sm text-muted-foreground">
-                  {patient.age} yrs • {patient.gender} • {patient.patient_id}
+                  {patient.age || "?"} yrs • {patient.gender || "Unknown"} • {patient.patient_id}
                 </p>
               </div>
             </div>
@@ -62,14 +61,14 @@ export function PatientCard({ patient }: PatientCardProps) {
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            {patient.diagnosis.map((d) => (
+            {(patient.diagnosis || []).map((d) => (
               <Badge key={d} variant="secondary" className="text-xs">
                 {d}
               </Badge>
             ))}
           </div>
 
-          {patient.allergies.length > 0 && (
+          {(patient.allergies && patient.allergies.length > 0) && (
             <div className="mt-3 flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2">
               <AlertTriangle className="h-4 w-4 text-destructive" />
               <span className="text-xs text-destructive">
@@ -79,11 +78,11 @@ export function PatientCard({ patient }: PatientCardProps) {
           )}
 
           <div className="mt-3 text-xs text-muted-foreground">
-            Last visit: {new Date(patient.lastVisit).toLocaleDateString("en-IN", {
+            Last visit: {patient.lastVisit ? new Date(patient.lastVisit).toLocaleDateString("en-IN", {
               day: "numeric",
               month: "short",
               year: "numeric",
-            })}
+            }) : "N/A"}
           </div>
         </CardContent>
       </Card>

@@ -1,0 +1,177 @@
+{
+  "id": "P004",
+  "name": "Mr Tan Ah Kow",
+  "age": null,
+  "gender": null,
+  "bloodGroup": null,
+  "primaryDiagnosis": [
+    "Dementia",
+    "Stroke"
+  ],
+  "secondaryDiagnosis": [],
+  "allergies": [],
+  "medications": [],
+  "labResults": {},
+  "visits": [
+    {
+      "date": "2026-04-24",
+      "doctor": "OCR Import",
+      "department": "Medical Records",
+      "chiefComplaint": "incontinence, unable to bathe or use the toilet on his own, cognitive decline, memory deficits, dementia, stroke, hypertension, hyperlipidemia, cardiomyopathy, cardiac failure, chronic renal disease",
+      "clinicalNote": "Mr Tan Ah Kow is a 55-year-old man with a history of hypertension, hyperlipidemia, and stroke, who has developed dementia and is unable to make decisions regarding his personal welfare and property and affairs.",
+      "plan": "CT brain scan, MRI brain scan",
+      "source": "OCR_INGESTION"
+    },
+    {
+      "date": "2026-04-24",
+      "doctor": "OCR Import",
+      "department": "Medical Records",
+      "chiefComplaint": "incontinence, unable to bathe or use the toilet on his own, cognitive decline, memory deficits, dementia, stroke, hypertension, hyperlipidemia, cardiomyopathy, cardiac failure, chronic renal disease",
+      "clinicalNote": "Mr Tan Ah Kow is a 55-year-old man with a history of hypertension, hyperlipidemia, and stroke, who has developed dementia and is unable to make decisions regarding his personal welfare and property and affairs.",
+      "plan": "CT brain scan, MRI brain scan",
+      "source": "OCR_INGESTION"
+    }
+  ],
+  "clinicalFlags": [
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: incontinence",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    },
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: unable to bathe or use the toilet on his own",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    },
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: cognitive decline",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    },
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: memory deficits",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    },
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: dementia",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    },
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: stroke",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    },
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: hypertension",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    },
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: hyperlipidemia",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    },
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: cardiomyopathy",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    },
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: cardiac failure",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    },
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: chronic renal disease",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    },
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: incontinence",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    },
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: unable to bathe or use the toilet on his own",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    },
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: cognitive decline",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    },
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: memory deficits",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    },
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: dementia",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    },
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: stroke",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    },
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: hypertension",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    },
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: hyperlipidemia",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    },
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: cardiomyopathy",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    },
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: cardiac failure",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    },
+    {
+      "type": "HIGH",
+      "flag": "Reported symptom: chronic renal disease",
+      "evidence": "Imported from OCR document",
+      "recommendation": "Physician review advised"
+    }
+  ],
+  "overdueTests": [
+    {
+      "test": "CT brain scan"
+    },
+    {
+      "test": "MRI brain scan"
+    }
+  ]
+}

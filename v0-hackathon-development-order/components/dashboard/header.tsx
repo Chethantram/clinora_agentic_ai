@@ -12,10 +12,36 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { alerts } from "@/lib/mock-data";
+import { fetchApi } from "@/lib/backend-api";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+
+type Alert = {
+  id: string;
+  patient_id: string;
+  severity: string;
+  message: string;
+  timestamp: string;
+};
 
 export function Header() {
-  const unreadAlerts = alerts.filter((a) => a.severity === "high").length;
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    async function loadAlerts() {
+      try {
+        const data = await fetchApi<{ alerts: Alert[] }>("/api/dashboard/data");
+        if (active) setAlerts(data.alerts || []);
+      } catch {
+        // silently fail — keep empty
+      }
+    }
+    loadAlerts();
+    return () => { active = false; };
+  }, []);
+
+  const unreadAlerts = alerts.filter((a) => String(a.severity).toLowerCase() === "high");
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
@@ -26,7 +52,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/60 bg-card/70 px-6 backdrop-blur-xl">
       <div className="relative w-80">
-        
+
       </div>
 
       <div className="flex items-center gap-3">
@@ -43,9 +69,9 @@ export function Header() {
               className="relative h-10 w-10 rounded-xl border border-border/70 bg-muted/50 hover:bg-muted"
             >
               <Bell className="h-5 w-5 text-muted-foreground" />
-              {unreadAlerts > 0 && (
+              {unreadAlerts.length > 0 && (
                 <Badge className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary p-0 text-[10px] text-primary-foreground shadow-sm">
-                  {unreadAlerts}
+                  {unreadAlerts.length}
                 </Badge>
               )}
               <span className="sr-only">Notifications</span>
@@ -55,12 +81,11 @@ export function Header() {
             <DropdownMenuLabel className="flex items-center justify-between">
               <span>Critical Alerts</span>
               <Badge variant="destructive" className="text-xs">
-                {unreadAlerts} new
+                {unreadAlerts.length} new
               </Badge>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {alerts
-              .filter((a) => a.severity === "high")
+            {unreadAlerts
               .slice(0, 3)
               .map((alert) => (
                 <DropdownMenuItem
@@ -77,12 +102,10 @@ export function Header() {
               ))}
             <DropdownMenuSeparator />
             <DropdownMenuItem className="justify-center text-sm font-medium text-foreground">
-              View all alerts
+              <Link href="/alerts">View all alerts</Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-     
       </div>
     </header>
   );

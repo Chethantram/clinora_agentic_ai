@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 
 const routes = require('./routes/index');
+const v2Routes = require('./routes/v2');
 const whatsappRoute = require('./routes/whatsapp');
 
 function createApp(io) {
@@ -25,6 +26,7 @@ function createApp(io) {
   });
 
   app.use('/api', routes);
+  app.use('/api/v2', v2Routes);
   app.use('/api/whatsapp', whatsappRoute);
 
   app.get('/', (req, res) =>

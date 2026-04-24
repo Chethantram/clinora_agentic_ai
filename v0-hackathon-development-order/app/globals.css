@@ -66,8 +66,9 @@
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-sans: "Segoe UI", Arial, sans-serif;
+  --font-mono: "Consolas", "Courier New", monospace;
+  --font-display: "Trebuchet MS", "Segoe UI", Arial, sans-serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);

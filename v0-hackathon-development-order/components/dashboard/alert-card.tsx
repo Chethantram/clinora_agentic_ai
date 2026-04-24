@@ -2,22 +2,23 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { Alert } from "@/lib/mock-data";
-import { patients } from "@/lib/mock-data";
+import type { Alert } from "@/lib/clinora-api";
 import {
   AlertTriangle,
   Clock,
   Pill,
   TrendingUp,
   XCircle,
+  Bell,
 } from "lucide-react";
 import Link from "next/link";
 
 interface AlertCardProps {
   alert: Alert;
+  patientName?: string;
 }
 
-const typeConfig = {
+const typeConfig: Record<string, { icon: any; label: string }> = {
   drug_interaction: {
     icon: Pill,
     label: "Drug Interaction",
@@ -34,9 +35,17 @@ const typeConfig = {
     icon: TrendingUp,
     label: "Pattern Detected",
   },
+  lab: {
+    icon: AlertTriangle,
+    label: "Lab Alert",
+  },
+  alert: {
+    icon: Bell,
+    label: "Clinical Alert",
+  },
 };
 
-const severityConfig = {
+const severityConfig: Record<string, { bgClass: string; iconClass: string; badgeClass: string }> = {
   high: {
     bgClass: "bg-destructive/10 border-destructive/30",
     iconClass: "text-destructive",
@@ -54,11 +63,10 @@ const severityConfig = {
   },
 };
 
-export function AlertCard({ alert }: AlertCardProps) {
-  const type = typeConfig[alert.type];
-  const severity = severityConfig[alert.severity];
+export function AlertCard({ alert, patientName }: AlertCardProps) {
+  const type = typeConfig[alert.type || "alert"] || typeConfig.alert;
+  const severity = severityConfig[alert.severity || "medium"] || severityConfig.medium;
   const TypeIcon = type.icon;
-  const patient = patients.find((p) => p.patient_id === alert.patient_id);
 
   return (
     <Link href={`/patients/${alert.patient_id}`}>
@@ -89,18 +97,22 @@ export function AlertCard({ alert }: AlertCardProps) {
                   {type.label}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {new Date(alert.timestamp).toLocaleTimeString("en-IN", {
+                  {alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString("en-IN", {
                     hour: "2-digit",
                     minute: "2-digit",
-                  })}
+                  }) : "Now"}
                 </span>
               </div>
               <p className="mt-1 font-medium text-foreground line-clamp-2">
                 {alert.message}
               </p>
-              {patient && (
+              {patientName ? (
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Patient: {patient.name}
+                  Patient: {patientName}
+                </p>
+              ) : (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Patient ID: {alert.patient_id}
                 </p>
               )}
             </div>

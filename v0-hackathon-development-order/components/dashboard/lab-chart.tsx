@@ -13,7 +13,7 @@ import {
   Area,
   ComposedChart,
 } from "recharts";
-import { getLabTrend } from "@/lib/mock-data";
+import { useLabTrends } from "@/lib/clinora-api";
 
 interface LabChartProps {
   patientId: string;
@@ -22,9 +22,22 @@ interface LabChartProps {
 }
 
 export function LabChart({ patientId, testName, title }: LabChartProps) {
-  const data = getLabTrend(patientId, testName);
+  const { trends, loading, error } = useLabTrends(patientId, testName);
 
-  if (data.length === 0) {
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{title || testName}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex h-48 items-center justify-center text-muted-foreground">
+          Loading...
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error || !trends || !trends.data || trends.data.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -37,9 +50,39 @@ export function LabChart({ patientId, testName, title }: LabChartProps) {
     );
   }
 
-  const normalMin = data[0].normalMin;
-  const normalMax = data[0].normalMax;
-  const maxValue = Math.max(...data.map((d) => d.value), normalMax) * 1.1;
+  // Map the trends data to the chart format
+  const data = trends.data.map((d: any) => {
+    // Attempt to parse "min-max" from referenceRange (e.g. "4.0-5.6" or "90-120")
+    let normalMin = 0;
+    let normalMax = 0;
+    
+    if (typeof d.referenceRange === 'string') {
+       const rangeMatch = d.referenceRange.match(/(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)/);
+       if (rangeMatch) {
+         normalMin = Number(rangeMatch[1]);
+         normalMax = Number(rangeMatch[2]);
+       } else if (d.referenceRange.startsWith('<')) {
+         normalMax = Number(d.referenceRange.replace('<', '').trim());
+       } else if (d.referenceRange.startsWith('>')) {
+         normalMin = Number(d.referenceRange.replace('>', '').trim());
+         normalMax = normalMin * 1.5; // Arbitrary for charts
+       }
+    } else if (typeof d.referenceRange === 'object' && d.referenceRange) {
+       normalMin = d.referenceRange.min || 0;
+       normalMax = d.referenceRange.max || 0;
+    }
+
+    return {
+      date: d.date,
+      value: Number(d.value),
+      normalMin,
+      normalMax
+    };
+  });
+
+  const normalMin = data[data.length - 1].normalMin;
+  const normalMax = data[data.length - 1].normalMax;
+  const maxValue = Math.max(...data.map((d: any) => d.value), normalMax || 0) * 1.1;
 
   return (
     <Card>
@@ -95,18 +138,22 @@ export function LabChart({ patientId, testName, title }: LabChartProps) {
                 }
               />
               {/* Normal range area */}
-              <ReferenceLine
-                y={normalMax}
-                stroke="hsl(var(--primary))"
-                strokeDasharray="5 5"
-                strokeOpacity={0.5}
-              />
-              <ReferenceLine
-                y={normalMin}
-                stroke="hsl(var(--primary))"
-                strokeDasharray="5 5"
-                strokeOpacity={0.5}
-              />
+              {normalMax > 0 && (
+                <>
+                  <ReferenceLine
+                    y={normalMax}
+                    stroke="hsl(var(--primary))"
+                    strokeDasharray="5 5"
+                    strokeOpacity={0.5}
+                  />
+                  <ReferenceLine
+                    y={normalMin}
+                    stroke="hsl(var(--primary))"
+                    strokeDasharray="5 5"
+                    strokeOpacity={0.5}
+                  />
+                </>
+              )}
               <Line
                 type="monotone"
                 dataKey="value"
@@ -126,9 +173,13 @@ export function LabChart({ patientId, testName, title }: LabChartProps) {
           </ResponsiveContainer>
         </div>
         <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-          <span>
-            Normal range: {normalMin} - {normalMax}
-          </span>
+          {normalMax > 0 ? (
+            <span>
+              Normal range: {normalMin} - {normalMax}
+            </span>
+          ) : (
+            <span>No reference range</span>
+          )}
           <span className="font-medium text-foreground">
             Latest: {data[data.length - 1].value}
           </span>
