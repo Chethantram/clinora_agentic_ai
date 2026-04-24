@@ -68,7 +68,7 @@ export async function uploadDocument(
     if (data.structured) {
       let lowConfidenceCount = 0;
       const scores = data.structured.confidence_scores || {};
-      const threshold = 0.75;
+      const threshold = 0.99; // INCREASED so you can easily see the UI!
       
       // Calculate how many fields have low confidence
       for (const [key, score] of Object.entries(scores)) {
